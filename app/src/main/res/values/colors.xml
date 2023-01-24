@@ -8,4 +8,7 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="background">#606060</color>
+    <color name="taskBackground">#EAFAFE</color>
+    <color name="taskButton">#3AB4D1</color>
+    <color name="taskButtonPressed">#6D91FFF3</color>
 </resources>
