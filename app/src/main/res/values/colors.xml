@@ -11,4 +11,9 @@
     <color name="taskBackground">#EAFAFE</color>
     <color name="taskButton">#3AB4D1</color>
     <color name="taskButtonPressed">#6D91FFF3</color>
+    <color name="accomplishedTaskButtonBackground">#01738C</color>
+    <color name="newTaskButton">#CCF4FD</color>
+    <color name="newTaskButtonAdd">#005D73</color>
+    <color name="menuIcons">#01738C</color>
+    <color name="a">#97E4F6</color>
 </resources>

@@ -1,16 +1,17 @@
 package com.example.reminder.domain
 
-import com.example.reminder.data.TaskModel
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
+import com.example.reminder.data.TaskRepository
+import com.example.reminder.data.model.TaskModel
+import java.lang.ref.WeakReference
 
-class GetTasksListUseCase {
+class GetTasksListUseCase(context: Context) {
 
-    operator fun invoke(): List<TaskModel>?{
-//        val tasks = TaskProvider.tasks
-        val tasks : List<TaskModel> = listOf(TaskModel("test", "description", 20221201))
+        private val repository = TaskRepository.getInstance(context)
 
-        if(!tasks.isNullOrEmpty()){
-            return tasks
+        suspend operator fun invoke():MutableList<TaskModel> {
+                return repository.getAllTasks()
         }
-        return null
-    }
+
 }
