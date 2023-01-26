@@ -32,8 +32,8 @@ class TaskViewModel(context: Context) : ViewModel() {
     private val _taskTextStyle = MutableLiveData<TextStyle>()
     val taskTextStyle: LiveData<TextStyle> = _taskTextStyle
 
-    private val _backgroundOn = MutableLiveData<Boolean>()
-    val backgroundOn: LiveData<Boolean> = _backgroundOn
+    private val _isMindOn = MutableLiveData<Boolean>()
+    val isMindOn: LiveData<Boolean> = _isMindOn
 
     private val _selectedTask = MutableLiveData<Task>()
     val selectedTask: LiveData<Task> = _selectedTask
@@ -105,7 +105,7 @@ class TaskViewModel(context: Context) : ViewModel() {
     }
 
     fun onScreenChanged(isMindScreen: Boolean) {
-        _backgroundOn.value = isMindScreen
+        _isMindOn.value = isMindScreen
         if (isMindScreen) {
             _mindTextStyle.value = mainTextStyle
             _taskTextStyle.value = backgroundTextStyle
@@ -128,6 +128,7 @@ class TaskViewModel(context: Context) : ViewModel() {
     fun updateTask() {
         viewModelScope.launch() {
             updateDatabaseTask(_selectedTask.value)
+            Log.e("updatedTask", _selectedTask.value.toString())
             val result = loadTaskList()
             _taskList.postValue(result)
         }

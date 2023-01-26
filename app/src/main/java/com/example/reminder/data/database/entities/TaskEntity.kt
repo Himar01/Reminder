@@ -18,9 +18,9 @@ data class TaskEntity(
 
 fun Task.toDatabase():TaskEntity  {
     return if(id == 0){
-        TaskEntity(name = name, description = description, date = date, completed = completed)
+        TaskEntity(name = name, description = description, date = date, completed = completed, isMind = isMind)
     } else {
-        TaskEntity(id = id, name = name, description = description, date = date, completed = completed)
+        TaskEntity(id = id, name = name, description = description, date = date, completed = completed, isMind = isMind)
     }
 
 }

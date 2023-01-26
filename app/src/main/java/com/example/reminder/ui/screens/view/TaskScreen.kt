@@ -1,5 +1,6 @@
 package com.example.reminder.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -79,7 +80,7 @@ fun BodyContent(
         )
     )
 
-    val backgroundOn: Boolean by viewModel.backgroundOn.observeAsState(initial = false)
+    val isMindOn: Boolean by viewModel.isMindOn.observeAsState(initial = false)
     val dialogShown: Boolean? by viewModel.dialogShown.observeAsState(initial = false)
     val selectedTask: Task? by viewModel.selectedTask.observeAsState(initial = null)
 
@@ -97,14 +98,16 @@ fun BodyContent(
                 viewModel.showDialog(false)
             },
             onConfirmButtonClicked = {
+                it.isMind = isMindOn
                 viewModel.changeSelectedTask(it)
+                Log.e("updateTask", it.toString())
                 viewModel.updateTask()
                 viewModel.showDialog(false)
             })
     }
     @Composable
     fun Modifier.viewModelPaint(): Modifier {
-        return if (backgroundOn) {
+        return if (isMindOn) {
             this.paint(
                 painterResource(id = R.drawable.subway_whiter),
                 contentScale = ContentScale.Crop
@@ -143,21 +146,23 @@ fun BodyContent(
         ) {
             itemsIndexed(items = taskListViewModel?.toList() ?: emptyList()) { index, task ->
                 val context = LocalContext.current
-                if (if (completedTaskVisible) task.completed else !task.completed) {
-                    Box(
-                        Modifier.padding(
-                            bottom = 16.dp,
-                            top = if (index == 0) 16.dp else 0.dp
+                if(if(isMindOn) task.isMind else !task.isMind){
+                    if (if (completedTaskVisible) task.completed else !task.completed) {
+                        Box(
+                            Modifier.padding(
+                                bottom = 16.dp,
+                                top = if (index == 0) 16.dp else 0.dp
 
-                        )
-                    ) {
-                        TaskView(Modifier, task, onCardClicked = { task ->
-                            viewModel.changeSelectedTask(task)
-                            viewModel.showDialog(true)
-                        }, onCompleteClicked = { task ->
-                            task.completed = !task.completed
-                            viewModel.updateTask(task)
-                        }, completedTaskVisible)
+                            )
+                        ) {
+                            TaskView(Modifier, task, onCardClicked = { task ->
+                                viewModel.changeSelectedTask(task)
+                                viewModel.showDialog(true)
+                            }, onCompleteClicked = { task ->
+                                task.completed = !task.completed
+                                viewModel.updateTask(task)
+                            }, completedTaskVisible)
+                        }
                     }
                 }
             }
@@ -354,7 +359,7 @@ fun TaskView(
                     Spacer(Modifier.height(8.dp))
                     var dateText = if (task.date != null) dateFormat(task.date!!) else ""
                     var past = false
-                    if(dateText.substring(0,1)=="*"){
+                    if(dateText != "" && dateText.substring(0,1)=="*"){
                         past = true
                         dateText = dateText.substring(1,dateText.length)
                     }
