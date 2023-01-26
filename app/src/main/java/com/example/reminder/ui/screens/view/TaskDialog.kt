@@ -207,11 +207,11 @@ fun Description(descriptionValue: String, onDescriptionChanged: (String) -> Unit
             onValueChange = { onDescriptionChanged(it) },
             modifier = Modifier
                 .padding(start = 25.dp, end = 35.dp, bottom = 15.dp, top = 5.dp)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .height(100.dp),
             maxLines = 5,
             textStyle = TextStyle(
                 color = Color.Gray,
-                textAlign = TextAlign.Justify,
             ),
             decorationBox = { innerTextField ->
                 Box {
@@ -350,13 +350,3 @@ fun DatePicker(
     }
 }
 
-@Composable
-fun Test(
-    task: Task? = null,
-    onBackButtonClicked: (String) -> Unit = {},
-    onDeleteButtonClicked: (Task?) -> Unit = {},
-    onConfirmButtonClicked: (Task) -> Unit = {},
-    onRandomButtonClicked: () -> Unit = {}
-) {
-
-}
