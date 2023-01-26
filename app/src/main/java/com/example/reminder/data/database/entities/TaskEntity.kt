@@ -12,7 +12,7 @@ data class TaskEntity(
     @ColumnInfo(name = "name")var name: String,
     @ColumnInfo(name = "description")var description: String?,
     @ColumnInfo(name = "date")var date: Int?,
-    @ColumnInfo(name = "quote_table")var completed: Boolean
+    @ColumnInfo(name = "completed")var completed: Boolean
 )
 
 fun Task.toDatabase():TaskEntity  {

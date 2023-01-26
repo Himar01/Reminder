@@ -1,5 +1,6 @@
 package com.example.reminder.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -78,9 +79,12 @@ fun BodyContent(
     )
 
     val backgroundOn: Boolean by viewModel.backgroundOn.observeAsState(initial = false)
-
     val dialogShown: Boolean? by viewModel.dialogShown.observeAsState(initial = false)
     val selectedTask: Task? by viewModel.selectedTask.observeAsState(initial = null)
+
+    val update: Boolean by viewModel.update.observeAsState(initial = false)
+
+    val completedTaskVisible: Boolean by viewModel.completedTaskVisible.observeAsState(initial = false)
 
     if (dialogShown != null && dialogShown!!) {
         TaskDialog(
@@ -107,6 +111,9 @@ fun BodyContent(
             this
         }
     }
+    if(update) {
+        Text("")
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -129,16 +136,17 @@ fun BodyContent(
             Modifier
                 .weight(3f)
                 .padding(top = 10.dp, start = 25.dp, end = 25.dp),
-            verticalArrangement = Arrangement.spacedBy(15.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
             contentPadding = PaddingValues(top = 3.dp, bottom = 15.dp)
         ) {
             items(items = taskListViewModel?.toList() ?: emptyList()) {
-                if (!it.completed) {
-                    TaskView(Modifier, it, { task ->
+                val context = LocalContext.current
+                if ( if (completedTaskVisible) it.completed else !it.completed) {
+                    TaskView(Modifier, it, onCardClicked = { task ->
                         viewModel.changeSelectedTask(task)
                         viewModel.showDialog(true)
-                    }, { task ->
-                        task.completed != task.completed
+                    }, onCompleteClicked = { task ->
+                        task.completed = !task.completed
                         viewModel.updateTask(task)
                     })
                 }
@@ -151,10 +159,10 @@ fun BodyContent(
                 .weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            bottomMenu {
+            bottomMenu(onNewTaskClicked = {
                 viewModel.changeSelectedTask(null)
                 viewModel.showDialog(true)
-            }
+            }, onCompletedTaskVisible = { viewModel.changeCompletedTaskVisibility() } )
         }
     }
 }
@@ -188,9 +196,9 @@ fun RowScope.TopBar(
 }
 
 @Composable
-fun bottomMenu(onNewTaskClicked: () -> Unit) {
+fun bottomMenu(onNewTaskClicked: () -> Unit, onCompletedTaskVisible: () -> Unit) {
     Button(
-        onClick = { /*TODO*/ },
+        onClick = { onCompletedTaskVisible() },
         colors = ButtonDefaults.textButtonColors(
             backgroundColor = colorResource(id = R.color.accomplishedTaskButtonBackground)
         ),
@@ -342,7 +350,8 @@ fun TaskView(
                 horizontalArrangement = Arrangement.Center
             ) {
                 OutlinedButton(
-                    onClick = { onCompleteClicked(task) },
+                    onClick = { onCompleteClicked(task)
+                              },
                     shape = CircleShape,
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = colorResource(id = R.color.taskButtonPressed)

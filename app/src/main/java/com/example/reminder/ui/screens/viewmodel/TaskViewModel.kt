@@ -40,6 +40,12 @@ class TaskViewModel(context: Context) : ViewModel() {
     private val _dialogShown = MutableLiveData<Boolean?>()
     val dialogShown: LiveData<Boolean?> = _dialogShown
 
+    private val _completedTaskVisible = MutableLiveData<Boolean>()
+    val completedTaskVisible: LiveData<Boolean> = _completedTaskVisible
+
+    private val _update = MutableLiveData<Boolean>()
+    val update: LiveData<Boolean> = _update
+
     val getRandomTask = GetRandomTaskUseCase(context)
     val loadTaskList = GetTasksListUseCase(context)
     val updateDatabaseTask = UpdateTaskUseCase(context)
@@ -106,10 +112,21 @@ class TaskViewModel(context: Context) : ViewModel() {
 
     fun updateTask(task: Task) {
         viewModelScope.launch() {
+            Log.e("updatingTask", task.toString())
             updateDatabaseTask(task)
             val result = loadTaskList()
+            Log.e("Result after update", result.toString())
             _taskList.postValue(result)
+            updateScreen()
         }
+    }
+
+    fun changeCompletedTaskVisibility(){
+        _completedTaskVisible.value = if(completedTaskVisible.value!=null) !(completedTaskVisible.value!!) else true
+    }
+
+    fun updateScreen(){
+        _update.value = if(update.value!=null) !(update.value!!) else true
     }
     fun deleteTask(task: Task?) {
 
