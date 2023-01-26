@@ -2,6 +2,7 @@ package com.example.reminder.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -148,7 +149,7 @@ fun BodyContent(
                     }, onCompleteClicked = { task ->
                         task.completed = !task.completed
                         viewModel.updateTask(task)
-                    })
+                    }, completedTaskVisible)
                 }
             }
         }
@@ -305,7 +306,8 @@ fun TaskView(
     modifier: Modifier = Modifier,
     task: Task = Task(0, "prueba", "descripción", 20221001, false),
     onCardClicked: (Task) -> Unit = {},
-    onCompleteClicked: (Task) -> Unit = {}
+    onCompleteClicked: (Task) -> Unit = {},
+    completedTaskVisible: Boolean = false
 ) {
     Card(
         backgroundColor = colorResource(id = R.color.taskBackground),
@@ -354,7 +356,8 @@ fun TaskView(
                               },
                     shape = CircleShape,
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = colorResource(id = R.color.taskButtonPressed)
+                        contentColor = colorResource(id = R.color.taskButtonPressed),
+                    backgroundColor = if(completedTaskVisible) colorResource(id = R.color.taskButton) else Color.Transparent
                     ),
                     modifier = Modifier
                         .width(25.dp)
