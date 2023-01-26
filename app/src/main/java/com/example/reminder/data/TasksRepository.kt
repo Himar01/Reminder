@@ -5,25 +5,29 @@ import android.util.Log
 import androidx.room.Room
 import com.example.reminder.data.database.TaskDatabase
 import com.example.reminder.data.database.dao.TaskDao
+import com.example.reminder.data.database.entities.TaskEntity
 import com.example.reminder.data.model.TaskModel
-import com.example.reminder.data.model.TaskProvider
 import com.example.reminder.data.network.TaskService
+import com.example.reminder.domain.model.Task
+import com.example.reminder.domain.model.toDomain
 
 class TaskRepository private constructor() {
 
-    suspend fun getRandomTasks(): MutableList<TaskModel> {
+    suspend fun getRandomTasks(): MutableList<Task> {
         //Log.e("TaskRepository", "getRandomTasks ${this.toString()}")
-        val response = api.getTasks()
-        return response
+        val response: List<TaskModel> = api.getTasks()
+        return response.map { it.toDomain() }.toMutableList()
     }
 
-    /* TODO: Make access via Database */
-//    suspend fun getRandomTasks(): MutableList<TaskModel> {
-//        //Log.e("TaskRepository", "getRandomTasks ${this.toString()}")
-//        val response = getTaskDao().getAllTasks()
-//        TaskProvider.tasks = response.toMutableList()
-//        return response
-//    }
+    suspend fun getAllTasksFromDatabase(): MutableList<Task>{
+        val response: List<TaskEntity> = getTaskDao().getAllTasks()
+        return response.map { it.toDomain() }.toMutableList()
+    }
+
+    suspend fun insertTask(task: TaskEntity){
+        getTaskDao().insert(task)
+        Log.e("insertTask","Task inserted")
+    }
 
     companion object {
         @Volatile private var INSTANCE: TaskRepository? = null

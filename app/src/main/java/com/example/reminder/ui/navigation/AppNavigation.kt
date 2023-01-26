@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.reminder.ui.screens.TaskViewModel
+import com.example.reminder.ui.screens.viewmodel.TaskViewModel
 import com.example.reminder.ui.screens.TestScreen
 
 @Composable

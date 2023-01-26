@@ -16,4 +16,8 @@
     <color name="newTaskButtonAdd">#005D73</color>
     <color name="menuIcons">#01738C</color>
     <color name="a">#97E4F6</color>
+    <color name="DialogSpacer">#F6F6F6</color>
+    <color name="backIcon">#D8D8D8</color>
+    <color name="deleteIcon">#FF5F5F</color>
+    <color name="checkIcon">#70C8DC</color>
 </resources>

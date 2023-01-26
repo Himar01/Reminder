@@ -3,4 +3,9 @@
     <string name="accomplishedTasks">Tareas completadas</string>
     <string name="Mind">Mente</string>
     <string name="Tasks">Tareas</string>
+    <string name="title_intro">Titulo:</string>
+    <string name="lipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi non nibh vitae libero porttitor maximus. Cras dapibus libero mauris, non mollis justo lobortis ac. Fusce convallis facilisis tincidunt. Etiam interdum sem at velit facilisis, in tristique risus feugiat. Nam nec tortor finibus, dignissim magna eu, dictum mauris. Morbi viverra sem tortor, sed consectetur odio imperdiet non. Vivamus vel semper mi, ac luctus nisi. Suspendisse sed mauris urna. Praesent posuere purus sem, non suscipit ligula euismod nec. Pellentesque eget nunc imperdiet, pulvinar est id, commodo ex.</string>
+    <string name="date_intro">Fecha de vencimiento:</string>
+    <string name="description_intro">Descripción:</string>
+    <string name="description_hint">Escribe la descripción</string>
 </resources>

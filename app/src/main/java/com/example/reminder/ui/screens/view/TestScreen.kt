@@ -1,6 +1,7 @@
 package com.example.reminder.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,13 +26,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.reminder.R
-import com.example.reminder.data.model.TaskModel
+import com.example.reminder.domain.model.Task
+import com.example.reminder.ui.screens.view.TaskDialog
+import com.example.reminder.ui.screens.viewmodel.TaskViewModel
 import com.example.reminder.ui.theme.ReminderTheme
 import java.text.SimpleDateFormat
 import java.util.*
@@ -58,7 +62,7 @@ fun BodyContent(
     modifier: Modifier, navController: NavController, viewModel: TaskViewModel
 ) {
 
-    val taskListViewModel: MutableList<TaskModel>? by viewModel.taskList.observeAsState(initial = arrayListOf())
+    val taskListViewModel: List<Task>? by viewModel.taskList.observeAsState(initial = arrayListOf())
     val mindTextStyle: TextStyle by viewModel.mindTextStyle.observeAsState(
         initial = TextStyle(
             textAlign = TextAlign.Center,
@@ -72,8 +76,26 @@ fun BodyContent(
             fontSize = 25.sp
         )
     )
+
     val backgroundOn: Boolean by viewModel.backgroundOn.observeAsState(initial = false)
 
+    val dialogShown: Boolean? by viewModel.dialogShown.observeAsState(initial = false)
+    val selectedTask: Task? by viewModel.selectedTask.observeAsState(initial = null)
+
+    if (dialogShown != null && dialogShown!!) {
+        TaskDialog(
+            selectedTask,
+            { viewModel.showDialog(false) },
+            {
+                viewModel.deleteTask(it)
+                viewModel.showDialog(false)
+            },
+            {
+                viewModel.changeSelectedTask(it)
+                viewModel.updateTask()
+                viewModel.showDialog(false)
+            })
+    }
     @Composable
     fun Modifier.viewModelPaint(): Modifier {
         return if (backgroundOn) {
@@ -112,7 +134,13 @@ fun BodyContent(
         ) {
             items(items = taskListViewModel?.toList() ?: emptyList()) {
                 if (!it.completed) {
-                    Task(Modifier, it)
+                    TaskView(Modifier, it, { task ->
+                        viewModel.changeSelectedTask(task)
+                        viewModel.showDialog(true)
+                    }, { task ->
+                        task.completed != task.completed
+                        viewModel.updateTask(task)
+                    })
                 }
             }
         }
@@ -123,7 +151,10 @@ fun BodyContent(
                 .weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            bottomMenu()
+            bottomMenu {
+                viewModel.changeSelectedTask(null)
+                viewModel.showDialog(true)
+            }
         }
     }
 }
@@ -157,7 +188,7 @@ fun RowScope.TopBar(
 }
 
 @Composable
-fun bottomMenu() {
+fun bottomMenu(onNewTaskClicked: () -> Unit) {
     Button(
         onClick = { /*TODO*/ },
         colors = ButtonDefaults.textButtonColors(
@@ -170,12 +201,12 @@ fun bottomMenu() {
             color = Color.White
         )
     }
-    menuBar()
+    menuBar { onNewTaskClicked() }
 }
 
-@Preview
+
 @Composable
-fun menuBar() {
+fun menuBar(onNewTaskClicked: () -> Unit) {
     Row(
         modifier = Modifier
             .paint(
@@ -190,7 +221,7 @@ fun menuBar() {
         // Menu Button
         MenuButton()
         Spacer(modifier = Modifier.weight(1f))
-        newTaskButton(modifier = Modifier)
+        newTaskButton(modifier = Modifier, { onNewTaskClicked() })
         Spacer(modifier = Modifier.weight(1f))
         // Config Icon Button
         ConfigButton()
@@ -234,13 +265,13 @@ fun MenuButton() {
 
 
 @Composable
-fun newTaskButton(modifier: Modifier) {
+fun newTaskButton(modifier: Modifier, onNewTaskClicked: () -> Unit) {
     Column() {
         Button(
             modifier = modifier
                 .width(65.dp)
                 .height(65.dp),
-            onClick = { /*TODO*/ },
+            onClick = { onNewTaskClicked() },
             shape = CircleShape,
             contentPadding = PaddingValues(all = 7.dp),
             colors = ButtonDefaults.textButtonColors(
@@ -262,9 +293,11 @@ fun newTaskButton(modifier: Modifier) {
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun Task(
+fun TaskView(
     modifier: Modifier = Modifier,
-    task: TaskModel = TaskModel(0, "prueba", "descripción", 20221001, false)
+    task: Task = Task(0, "prueba", "descripción", 20221001, false),
+    onCardClicked: (Task) -> Unit = {},
+    onCompleteClicked: (Task) -> Unit = {}
 ) {
     Card(
         backgroundColor = colorResource(id = R.color.taskBackground),
@@ -272,11 +305,12 @@ fun Task(
             bottomStart = 25.dp, bottomEnd = 5.dp, topStart = 5.dp, topEnd = 5.dp
         ),
         elevation = 5.dp,
-        modifier = Modifier.wrapContentHeight(),
+        modifier = Modifier
+            .wrapContentHeight()
+            .clickable { onCardClicked(task) },
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
@@ -286,9 +320,9 @@ fun Task(
 
             ) {
                 ProvideTextStyle(TextStyle(color = Color.Black)) {
-                    /* TODO: Show ... when maxLine is applied */
                     Text(
-                        fontSize = 20.sp, text = task.name ?: "", maxLines = 1
+                        fontSize = 20.sp, text = task.name ?: "", maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
@@ -308,7 +342,7 @@ fun Task(
                 horizontalArrangement = Arrangement.Center
             ) {
                 OutlinedButton(
-                    onClick = { task.completed = false },
+                    onClick = { onCompleteClicked(task) },
                     shape = CircleShape,
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = colorResource(id = R.color.taskButtonPressed)
@@ -325,6 +359,7 @@ fun Task(
     }
 }
 
+@Composable
 fun dateFormat(date: Int): String {
     val dt: Date? = SimpleDateFormat("yyyyMMdd", Locale.ENGLISH).parse(date.toString())
     val cal: Calendar = Calendar.getInstance()

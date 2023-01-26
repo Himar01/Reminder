@@ -9,9 +9,9 @@ class TaskService {
 
     private val retrofit = RetrofitHelper.getRetrofit()
 
-    suspend fun getTasks(): MutableList<TaskModel>{
+    suspend fun getTasks(): List<TaskModel>{
         return withContext(Dispatchers.IO) {
-            val response = retrofit.create(QuoteApiClient::class.java).getAllQuotes()
+            val response = retrofit.create(TaskApiClient::class.java).getAllQuotes()
             response.body() ?: arrayListOf()
         }
     }
