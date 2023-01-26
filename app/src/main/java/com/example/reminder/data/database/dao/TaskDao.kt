@@ -1,9 +1,6 @@
 package com.example.reminder.data.database.dao
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 import com.example.reminder.data.database.entities.TaskEntity
 
 @Dao
@@ -15,4 +12,6 @@ interface TaskDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(tasks:TaskEntity)
 
+    @Delete
+    suspend fun delete(task:TaskEntity)
 }

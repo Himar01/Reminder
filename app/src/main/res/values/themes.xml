@@ -4,4 +4,17 @@
     <style name="Theme.Reminder" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@color/purple_700</item>
     </style>
+<!--    <style name="App.Dialog.DateTime" parent="android:ThemeOverlay.Material.Dialog">-->
+<!--        <item name="colorAccent">?attr/clAccent</item>-->
+<!--        <item name="android:windowBackground">?attr/clPrimary</item>-->
+<!--        <item name="android:buttonBarNegativeButtonStyle">@style/App.Dialog.NegativeButton</item>-->
+
+<!--        &lt;!&ndash;  For overScrollMode  &ndash;&gt;-->
+<!--        <item name="android:colorEdgeEffect">?attr/clAccentRipple</item>-->
+<!--        <item name="android:overScrollMode">ifContentScrolls</item>-->
+<!--    </style>-->
+
+<!--    <style name="App.Dialog.NegativeButton" parent="@style/Widget.AppCompat.Button.ButtonBar.AlertDialog">-->
+<!--        <item name="android:textColor">?attr/clContentSecond</item>-->
+<!--    </style>-->
 </resources>

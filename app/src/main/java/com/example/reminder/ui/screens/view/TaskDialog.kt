@@ -1,15 +1,19 @@
 package com.example.reminder.ui.screens.view
 
-import android.widget.Toast
-import androidx.compose.foundation.background
+
+import android.app.AlertDialog
+import android.app.DatePickerDialog
+import android.util.Log
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -23,10 +27,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.reminder.R
 import com.example.reminder.domain.model.Task
+import com.example.reminder.ui.screens.viewmodel.TaskViewModel
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
-@Preview(showBackground = true, showSystemUi = true)
+
 @Composable
 fun TaskDialog(
+    taskViewModel: TaskViewModel,
     task: Task? = null,
     onBackButtonClicked: () -> Unit = {},
     onDeleteButtonClicked: (Task?) -> Unit = {},
@@ -35,7 +43,11 @@ fun TaskDialog(
     var newTask = task
     var title: String by remember { mutableStateOf(task?.name ?: "") }
     var description: String by remember { mutableStateOf(task?.description ?: "") }
-
+    var date: Int? = task?.date
+    val isLoading: Boolean by taskViewModel.isLoading.observeAsState(false)
+    var openDialog: Boolean by remember {
+        mutableStateOf(false)
+    }
     /* TODO Añadir un nuevo dialogo de confirmación con botones SI NO */
     Dialog(
         onDismissRequest = { onBackButtonClicked() }) {
@@ -44,21 +56,51 @@ fun TaskDialog(
                 bottomStart = 10.dp, bottomEnd = 10.dp, topStart = 10.dp, topEnd = 10.dp
             ),
         ) {
+            if (openDialog) {
+                Box() {
+                    AlertDialog(onDismissRequest = { }, confirmButton = {
+                        TextButton(
+                            onClick = { openDialog = false },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = colorResource(id = R.color.newTaskButton)
+                            )
+                        ) {
+                            Text(
+                                stringResource(R.string.OK),
+                                color = colorResource(id = R.color.taskButton)
+
+                            )
+                        }
+                    },
+                        title = { Text(text = stringResource(R.string.no_internet)) },
+                        text = { Text(text = stringResource(R.string.no_internet_description)) })
+
+
+                }
+            }
+
             Column {
                 // TOP MENU ICONS
-                TopMenu(onBackButtonClicked,
-                    {
+                TopMenu(isLoading = isLoading, onBackButtonClicked = onBackButtonClicked,
+                    onDeleteButtonClicked = {
                         onDeleteButtonClicked(task)
                     },
-                    {
-                        if(task==null){
-                            newTask = Task(0, title, description, null, false)
-                        }else {
-                            newTask = Task(task.id,title, description, null, false)
+                    onConfirmButtonClicked = {
+                        newTask = if (task == null) {
+                            Task(0, title, description, date, false)
+                        } else {
+                            Task(task.id, title, description, date, false)
                         }
                         onConfirmButtonClicked(newTask!!)
                     }, onRandomButtonClicked = {
-
+                        taskViewModel.setRandomTask { randomTask ->
+                            if (randomTask != null) {
+                                title = randomTask.name
+                                description = randomTask.description ?: ""
+                            } else {
+                                openDialog = true
+                            }
+                        }
                     })
                 Spacer(
                     Modifier
@@ -75,7 +117,9 @@ fun TaskDialog(
                         .fillMaxWidth()
                 )
                 // OPTIONS
-                Options()
+                Options(date = date, onDateChanged = { newDate ->
+                    date = newDate?.toInt()
+                })
                 Spacer(
                     Modifier
                         .height(20.dp)
@@ -116,7 +160,11 @@ fun Title(titleValue: String, onTitleChanged: (String) -> Unit) {
             decorationBox = { innerTextField ->
                 Box {
                     if (titleValue == "") {
-                        Text("Escribe el título", color = Color.LightGray, fontSize = 16.sp)
+                        Text(
+                            stringResource(R.string.write_title_hint),
+                            color = Color.LightGray,
+                            fontSize = 16.sp
+                        )
                     }
                     innerTextField()
                 }
@@ -126,32 +174,21 @@ fun Title(titleValue: String, onTitleChanged: (String) -> Unit) {
 }
 
 @Composable
-fun Options() {
+fun Options(onDateChanged: (String?) -> Unit, date: Int?) {
     val context = LocalContext.current
+
     Column {
+
         Row(
             Modifier.padding(start = 15.dp, top = 20.dp, bottom = 25.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = stringResource(R.string.date_intro),
-                fontSize = 18.sp,
+                fontSize = 16.sp,
             )
-            TextButton(
-                onClick = {
-                    Toast.makeText(context, "Choose date", Toast.LENGTH_SHORT).show()
-                },
-                modifier = Modifier
-                    .padding(start = 25.dp, end = 25.dp),
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = colorResource(id = R.color.taskButtonPressed)
-                ),
-            ) {
-                Text(
-                    "Choose", color = colorResource(id = R.color.taskButton),
-                    textAlign = TextAlign.Center,
-                )
-            }
+            DatePicker(value = date?.toString(),
+                onValueChange = { date -> onDateChanged(date) })
         }
     }
 }
@@ -190,6 +227,7 @@ fun Description(descriptionValue: String, onDescriptionChanged: (String) -> Unit
 
 @Composable
 fun TopMenu(
+    isLoading: Boolean,
     onBackButtonClicked: () -> Unit = {},
     onDeleteButtonClicked: () -> Unit = {},
     onConfirmButtonClicked: () -> Unit = {},
@@ -211,13 +249,27 @@ fun TopMenu(
             )
         }
         Spacer(modifier = Modifier.weight(1f))
-        IconButton(onClick = { onRandomButtonClicked() }, modifier = Modifier.padding(end = 5.dp)) {
-            Icon(
-                painterResource(id = R.drawable.random),
-                "",
-                tint = Color.LightGray,
+        if (!isLoading) {
+            IconButton(
+                onClick = { onRandomButtonClicked() },
+                modifier = Modifier.padding(end = 5.dp)
+            ) {
+                Icon(
+                    painterResource(id = R.drawable.random),
+                    "",
+                    tint = Color.LightGray,
+                )
+            }
+        } else {
+            CircularProgressIndicator(
+                Modifier
+                    .padding(end = 18.dp)
+                    .width(20.dp)
+                    .height(20.dp),
+                color = colorResource(id = R.color.newTaskButton)
             )
         }
+
         IconButton(onClick = { onDeleteButtonClicked() }, modifier = Modifier.padding(end = 5.dp)) {
             Icon(
                 painterResource(id = R.drawable.baseline_delete_24),
@@ -233,4 +285,78 @@ fun TopMenu(
             )
         }
     }
+}
+
+@Composable
+fun DatePicker(
+    value: String? = null,
+    onValueChange: (String?) -> Unit,
+    pattern: String = "yyyyMMdd",
+) {
+    val formatter = DateTimeFormatter.ofPattern(pattern)
+    val displayedFormatter = DateTimeFormatter.ofPattern("MMM, d yyyy")
+    val date =
+        if (value?.isNotBlank() == true) LocalDate.parse(value, formatter) else LocalDate.now()
+    var text by remember {
+        mutableStateOf(
+            if (value == null) "Elegir" else date.format(
+                displayedFormatter
+            )
+        )
+    }
+    val dialog = DatePickerDialog(
+        LocalContext.current,
+        /* TODO Add proper colors to the datePicker */
+//        R.style.App_Dialog_DateTime,
+        { _, year, month, dayOfMonth ->
+            onValueChange(LocalDate.of(year, month + 1, dayOfMonth).format(formatter))
+            text = LocalDate.of(year, month + 1, dayOfMonth).format(displayedFormatter)
+        },
+        date.year,
+        date.monthValue - 1,
+        date.dayOfMonth,
+    )
+    TextButton(
+        onClick = {
+            dialog.show()
+        },
+        modifier = Modifier
+            .padding(
+                start = if (text == "Elegir") 25.dp else 10.dp,
+                end = if (text == "Elegir") 25.dp else 0.dp
+            ),
+        colors = ButtonDefaults.textButtonColors(
+            contentColor = colorResource(id = R.color.taskButtonPressed)
+        ),
+    ) {
+        Text(
+            text, color = colorResource(id = R.color.taskButton),
+            textAlign = TextAlign.Center,
+            fontSize = if (text == "Elegir") 16.sp else 12.sp
+        )
+    }
+    if (text != "Elegir") {
+        IconButton(onClick = {
+            text = "Elegir"
+            onValueChange(null)
+        }) {
+            Icon(
+                painterResource(id = R.drawable.baseline_clear_circle),
+                "",
+                tint = Color.LightGray,
+                modifier = Modifier.rotate(45f)
+            )
+        }
+    }
+}
+
+@Composable
+fun Test(
+    task: Task? = null,
+    onBackButtonClicked: (String) -> Unit = {},
+    onDeleteButtonClicked: (Task?) -> Unit = {},
+    onConfirmButtonClicked: (Task) -> Unit = {},
+    onRandomButtonClicked: () -> Unit = {}
+) {
+
 }

@@ -1,12 +1,10 @@
 package com.example.reminder.ui.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
@@ -40,6 +38,8 @@ import com.example.reminder.ui.screens.view.TaskDialog
 import com.example.reminder.ui.screens.viewmodel.TaskViewModel
 import com.example.reminder.ui.theme.ReminderTheme
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 
@@ -89,13 +89,14 @@ fun BodyContent(
 
     if (dialogShown != null && dialogShown!!) {
         TaskDialog(
-            selectedTask,
-            { viewModel.showDialog(false) },
-            {
+            taskViewModel = viewModel,
+            task = selectedTask,
+            onBackButtonClicked = { viewModel.showDialog(false) },
+            onDeleteButtonClicked = {
                 viewModel.deleteTask(it)
                 viewModel.showDialog(false)
             },
-            {
+            onConfirmButtonClicked = {
                 viewModel.changeSelectedTask(it)
                 viewModel.updateTask()
                 viewModel.showDialog(false)
@@ -112,7 +113,7 @@ fun BodyContent(
             this
         }
     }
-    if(update) {
+    if (update) {
         Text("")
     }
     Column(
@@ -137,19 +138,27 @@ fun BodyContent(
             Modifier
                 .weight(3f)
                 .padding(top = 10.dp, start = 25.dp, end = 25.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+//            verticalArrangement = Arrangement.spacedBy(14.dp),
             contentPadding = PaddingValues(top = 3.dp, bottom = 15.dp)
         ) {
-            items(items = taskListViewModel?.toList() ?: emptyList()) {
+            itemsIndexed(items = taskListViewModel?.toList() ?: emptyList()) { index, task ->
                 val context = LocalContext.current
-                if ( if (completedTaskVisible) it.completed else !it.completed) {
-                    TaskView(Modifier, it, onCardClicked = { task ->
-                        viewModel.changeSelectedTask(task)
-                        viewModel.showDialog(true)
-                    }, onCompleteClicked = { task ->
-                        task.completed = !task.completed
-                        viewModel.updateTask(task)
-                    }, completedTaskVisible)
+                if (if (completedTaskVisible) task.completed else !task.completed) {
+                    Box(
+                        Modifier.padding(
+                            bottom = 16.dp,
+                            top = if (index == 0) 16.dp else 0.dp
+
+                        )
+                    ) {
+                        TaskView(Modifier, task, onCardClicked = { task ->
+                            viewModel.changeSelectedTask(task)
+                            viewModel.showDialog(true)
+                        }, onCompleteClicked = { task ->
+                            task.completed = !task.completed
+                            viewModel.updateTask(task)
+                        }, completedTaskVisible)
+                    }
                 }
             }
         }
@@ -163,7 +172,9 @@ fun BodyContent(
             bottomMenu(onNewTaskClicked = {
                 viewModel.changeSelectedTask(null)
                 viewModel.showDialog(true)
-            }, onCompletedTaskVisible = { viewModel.changeCompletedTaskVisibility() } )
+            }, onCompletedTaskVisible = { viewModel.changeCompletedTaskVisibility() },
+                completedTaskVisible
+            )
         }
     }
 }
@@ -197,18 +208,24 @@ fun RowScope.TopBar(
 }
 
 @Composable
-fun bottomMenu(onNewTaskClicked: () -> Unit, onCompletedTaskVisible: () -> Unit) {
+fun bottomMenu(
+    onNewTaskClicked: () -> Unit,
+    onCompletedTaskVisible: () -> Unit,
+    completedTaskVisible: Boolean
+) {
     Button(
         onClick = { onCompletedTaskVisible() },
         colors = ButtonDefaults.textButtonColors(
-            backgroundColor = colorResource(id = R.color.accomplishedTaskButtonBackground)
+            backgroundColor = if (completedTaskVisible) Color.Gray else colorResource(id = R.color.accomplishedTaskButtonBackground),
+            contentColor = colorResource(id = R.color.accomplishedTaskButtonBackground),
         ),
     ) {
         Text(
             modifier = Modifier.padding(0.dp),
-            text = stringResource(R.string.accomplishedTasks),
-            color = Color.White
-        )
+            text = stringResource(R.string.completedTasks),
+            color = Color.White,
+
+            )
     }
     menuBar { onNewTaskClicked() }
 }
@@ -335,11 +352,16 @@ fun TaskView(
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(Modifier.height(8.dp))
+                    var dateText = if (task.date != null) dateFormat(task.date!!) else ""
+                    var past = false
+                    if(dateText.substring(0,1)=="*"){
+                        past = true
+                        dateText = dateText.substring(1,dateText.length)
+                    }
                     Text(
-                        //dateFormat(task.date) ?: "",
-                        "Falta 1 semana",
+                        dateText,
                         modifier = Modifier.padding(start = 7.dp),
-                        color = Color.Gray,
+                        color = if(past) Color.Red else Color.Gray,
                         fontSize = 13.sp
                     )
                 }
@@ -351,19 +373,38 @@ fun TaskView(
                     .absolutePadding(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                OutlinedButton(
-                    onClick = { onCompleteClicked(task)
-                              },
-                    shape = CircleShape,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = colorResource(id = R.color.taskButtonPressed),
-                    backgroundColor = if(completedTaskVisible) colorResource(id = R.color.taskButton) else Color.Transparent
-                    ),
-                    modifier = Modifier
-                        .width(25.dp)
-                        .height(25.dp),
-                    border = BorderStroke(1.dp, colorResource(id = R.color.taskButton))
-                ) {}
+                if (completedTaskVisible) {
+                    IconButton(
+                        onClick = {
+                            onCompleteClicked(task)
+                        },
+                        modifier = Modifier
+                            .width(25.dp)
+                            .height(25.dp),
+                    ) {
+                        Icon(
+                            painterResource(id = R.drawable.baseline_check_24),
+                            "",
+                            tint = colorResource(id = R.color.checkIcon),
+                        )
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = {
+                            onCompleteClicked(task)
+                        },
+                        shape = CircleShape,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = colorResource(id = R.color.taskButtonPressed),
+                            backgroundColor = if (completedTaskVisible) colorResource(id = R.color.taskButton) else Color.Transparent
+                        ),
+                        modifier = Modifier
+                            .width(25.dp)
+                            .height(25.dp),
+                        border = BorderStroke(1.dp, colorResource(id = R.color.taskButton))
+                    ) {}
+                }
+
             }
             Spacer(Modifier.weight(.3f))
 
@@ -376,11 +417,20 @@ fun dateFormat(date: Int): String {
     val dt: Date? = SimpleDateFormat("yyyyMMdd", Locale.ENGLISH).parse(date.toString())
     val cal: Calendar = Calendar.getInstance()
     cal.time = dt!!
-
-    val format = SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH)
-    // Tenth of a day
-    /* TODO: Waiting for ROOM Database creation */
-    return ((cal.timeInMillis - Calendar.getInstance().timeInMillis) / 8640000).toString()
+    // Results are tenth of a day
+    return when (((cal.timeInMillis - Calendar.getInstance().timeInMillis) / 8640000)) {
+        in -19..-10 -> "*Ayer"
+        in -9..-1 -> "Hoy"
+        in 0..9 -> "Mañana"
+        in 9..Int.MAX_VALUE -> LocalDate.parse(
+            date.toString(),
+            DateTimeFormatter.ofPattern("yyyyMMdd")
+        ).format(DateTimeFormatter.ofPattern("MMM, d yyyy"))
+        else -> "*"+LocalDate.parse(
+            date.toString(),
+            DateTimeFormatter.ofPattern("yyyyMMdd")
+        ).format(DateTimeFormatter.ofPattern("MMM, d yyyy"))
+    }
 }
 
 @Preview(showBackground = true, showSystemUi = true)

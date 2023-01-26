@@ -24,8 +24,8 @@ class GetRandomTaskUseCase(context: Context)  {
         val apiTasks : MutableList<Task>  = repository.getRandomTasks()
         if(!apiTasks.isNullOrEmpty()){
             RandomTaskProvider.tasks = apiTasks.map { it.toModel() }.toMutableList()
-            val randomNumber = (tasks.indices).random()
-            return tasks[randomNumber]
+            val randomNumber = (apiTasks.indices).random()
+            return apiTasks[randomNumber]
         }
         return null
     }

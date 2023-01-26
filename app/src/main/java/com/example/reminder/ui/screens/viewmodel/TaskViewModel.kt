@@ -10,6 +10,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.reminder.domain.DeleteTaskUseCase
 import com.example.reminder.domain.GetRandomTaskUseCase
 import com.example.reminder.domain.GetTasksListUseCase
 import com.example.reminder.domain.UpdateTaskUseCase
@@ -46,9 +47,11 @@ class TaskViewModel(context: Context) : ViewModel() {
     private val _update = MutableLiveData<Boolean>()
     val update: LiveData<Boolean> = _update
 
-    val getRandomTask = GetRandomTaskUseCase(context)
-    val loadTaskList = GetTasksListUseCase(context)
-    val updateDatabaseTask = UpdateTaskUseCase(context)
+
+    private val getRandomTaskFromApi = GetRandomTaskUseCase(context)
+    private val loadTaskList = GetTasksListUseCase(context)
+    private val updateDatabaseTask = UpdateTaskUseCase(context)
+    private val deleteTaskFromDatabase = DeleteTaskUseCase(context)
 
     private val mainTextStyle = TextStyle(
         textAlign = TextAlign.Center,
@@ -61,23 +64,43 @@ class TaskViewModel(context: Context) : ViewModel() {
         fontSize = 20.sp
     )
 
-    fun <T> MutableLiveData<MutableList<T>>.addNewItem(item: T) {
-        val oldValue = this.value ?: mutableListOf()
-        oldValue.add(item)
-        this.postValue(oldValue)
-    }
-    //    try{
-//        val result = loadTaskList()
-//        _taskList.postValue(result)
-//    }catch( e: Exception){
-//        Log.e("ViewModel.onCreate()", "Error: $e")
-//        delay(4000)
-//        onCreate()
+//    fun <T> MutableLiveData<MutableList<T>>.addNewItem(item: T) {
+//        val oldValue = this.value ?: mutableListOf()
+//        oldValue.add(item)
+//        this.postValue(oldValue)
 //    }
+
     fun onCreate() {
         viewModelScope.launch() {
+            _isLoading.value = true
             val result = loadTaskList()
             _taskList.postValue(result)
+            _isLoading.value = false
+        }
+    }
+
+    fun setRandomTask(setRandomTask: (Task?) -> Unit ){
+        if(!_isLoading.value!!) {
+            viewModelScope.launch () {
+                _isLoading.value = true
+                var count = 0
+                while(_isLoading.value!!){
+                    count++
+                    try {
+                        _isLoading.value = true
+                        val randomTask = getRandomTaskFromApi()
+                        setRandomTask(randomTask)
+                        _isLoading.value = false
+                    } catch (e: java.lang.Exception) {
+                        Log.e("Getting Random Task from API", e.toString())
+                        delay(1000)
+                    }
+                    if(count>=5) {
+                        _isLoading.value = false
+                        setRandomTask(null)
+                    }
+                }
+            }
         }
     }
 
@@ -112,10 +135,8 @@ class TaskViewModel(context: Context) : ViewModel() {
 
     fun updateTask(task: Task) {
         viewModelScope.launch() {
-            Log.e("updatingTask", task.toString())
             updateDatabaseTask(task)
             val result = loadTaskList()
-            Log.e("Result after update", result.toString())
             _taskList.postValue(result)
             updateScreen()
         }
@@ -129,7 +150,12 @@ class TaskViewModel(context: Context) : ViewModel() {
         _update.value = if(update.value!=null) !(update.value!!) else true
     }
     fun deleteTask(task: Task?) {
-
+        viewModelScope.launch() {
+            deleteTaskFromDatabase(task)
+            val result = loadTaskList()
+            _taskList.postValue(result)
+            updateScreen()
+        }
     }
 
 }

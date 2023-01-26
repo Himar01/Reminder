@@ -12,7 +12,8 @@ data class TaskEntity(
     @ColumnInfo(name = "name")var name: String,
     @ColumnInfo(name = "description")var description: String?,
     @ColumnInfo(name = "date")var date: Int?,
-    @ColumnInfo(name = "completed")var completed: Boolean
+    @ColumnInfo(name = "completed")var completed: Boolean,
+    @ColumnInfo(name = "isMind")var isMind: Boolean = false
 )
 
 fun Task.toDatabase():TaskEntity  {

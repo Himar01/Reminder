@@ -8,8 +8,9 @@ data class Task(
     var name: String,
     var description: String?,
     var date: Int?,
-    var completed: Boolean
+    var completed: Boolean,
+    var isMind: Boolean = false
 )
 
-fun TaskModel.toDomain() = Task(id,name,description,date,completed)
-fun TaskEntity.toDomain() = Task(id,name,description,date,completed)
+fun TaskModel.toDomain() = Task(id,name,description,date,completed, )
+fun TaskEntity.toDomain() = Task(id,name,description,date,completed, isMind)

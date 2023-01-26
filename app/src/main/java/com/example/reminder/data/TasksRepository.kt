@@ -26,7 +26,10 @@ class TaskRepository private constructor() {
 
     suspend fun insertTask(task: TaskEntity){
         getTaskDao().insert(task)
-        Log.e("insertTask","Task inserted")
+    }
+
+    suspend fun deleteTask(task:TaskEntity){
+        getTaskDao().delete(task)
     }
 
     companion object {
